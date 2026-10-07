@@ -1,0 +1,44 @@
+{#
+  base.html — shared layout for every page.
+
+  All other templates extend this one and fill the `body` block.
+  `get_flashed_messages()` renders one-off notices (validation errors,
+  confirmations) that routes push with flash().
+#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  {# Viewport meta so the layout works on phones without zooming. #}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Anonymous Survey Taker{% endblock %}</title>
+  {# Single stylesheet shared by all pages. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    {# Brand always links back to the builder home page. #}
+    <a class="brand" href="{{ url_for('index') }}">anonymous<span>survey</span></a>
+  </header>
+
+  <main class="container">
+    {# Flash messages: validation errors, success notes, etc. #}
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for message in messages %}
+            <li class="flash">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    {% block body %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    {# Static privacy statement — reassures respondents nothing is tracked. #}
+    <p>No logins. No tracking. No IP storage. Responses are anonymous.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,126 @@
+{#
+  index.html — the survey builder / landing page.
+
+  Renders one "question card" per question the author wants to add.
+  The list starts with a single card; JavaScript clones the hidden
+  <template> element to append more. Without JS the author can still
+  submit the one visible question (progressive enhancement).
+#}
+{% extends "base.html" %}
+
+{% block title %}Create a survey — Anonymous Survey Taker{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <h1>Create an anonymous survey</h1>
+  <p class="lede">
+    Build a survey, share the public link, and collect responses with
+    <strong>zero identifying data</strong> — no IPs, no cookies, no accounts.
+  </p>
+</section>
+
+<form class="builder" method="post" action="{{ url_for('create_survey') }}">
+
+  {# ---------- Survey-level fields ---------- #}
+  <fieldset class="card">
+    <legend>Survey details</legend>
+
+    <label class="field">
+      <span>Title <abbr title="required">*</abbr></span>
+      <input type="text" name="title" maxlength="200" required
+             placeholder="e.g. Team retro pulse check">
+    </label>
+
+    <label class="field">
+      <span>Description <em>(optional)</em></span>
+      <textarea name="description" rows="2" maxlength="1000"
+                placeholder="Shown above the questions to respondents."></textarea>
+    </label>
+  </fieldset>
+
+  {# ---------- Question cards ---------- #}
+  <fieldset class="card">
+    <legend>Questions</legend>
+
+    {# Live list of question cards gets appended here. #}
+    <div id="questions">
+      {% include "_question_card.html" %}
+    </div>
+
+    {# Button type=button (not submit) so it only runs the JS handler. #}
+    <button type="button" id="add-question" class="btn btn-secondary">
+      + Add question
+    </button>
+  </fieldset>
+
+  <button type="submit" class="btn btn-primary">Create survey</button>
+</form>
+
+{#
+  Template element: never rendered directly, only cloned by JS.
+  `include` reuses the exact same markup as the first question card,
+  so there's only one place defining the card structure.
+#}
+<template id="question-template">
+  {% include "_question_card.html" %}
+</template>
+
+<script>
+  /*
+   * Builder behavior:
+   *   1. Number all existing cards (names become q_type[0], q_prompt[0]...).
+   *   2. "Add question" clones the <template>, appends it, renumbers, focuses.
+   *   3. Each card's type <select> toggles the options textarea visibility.
+   *   4. Delegation on #questions handles per-card remove buttons.
+   */
+  const list = document.getElementById('questions');
+  const tpl  = document.getElementById('question-template');
+
+  // Rewrite every card's form names so indexes match array positions.
+  function renumber() {
+    list.querySelectorAll('.question-card').forEach((card, i) => {
+      card.querySelector('[name^="q_type"]').name     = `q_type[${i}]`;
+      card.querySelector('[name^="q_prompt"]').name   = `q_prompt[${i}]`;
+      const req = card.querySelector('[name^="q_required"]');
+      // Only checked boxes are submitted; store the index as its value.
+      req.value = i;
+      card.querySelector('[name^="q_options_"]').name  = `q_options_${i}`;
+      card.dataset.index = i;
+    });
+  }
+
+  // Show/hide the options box depending on the selected question type.
+  function syncType(card) {
+    const type = card.querySelector('select').value;
+    card.querySelector('.options-field').hidden = type !== 'choice';
+  }
+
+  document.getElementById('add-question').addEventListener('click', () => {
+    const node = tpl.content.firstElementChild.cloneNode(true);
+    list.appendChild(node);
+    renumber();
+    list.querySelectorAll('.question-card').forEach(syncType);
+    node.querySelector('textarea').focus();
+  });
+
+  // Delegated listeners: work for cards added now or later.
+  list.addEventListener('click', (e) => {
+    if (e.target.matches('[data-remove]')) {
+      // Never remove the last card — a survey must keep >= 1 question.
+      if (list.querySelectorAll('.question-card').length > 1) {
+        e.target.closest('.question-card').remove();
+        renumber();
+        list.querySelectorAll('.question-card').forEach(syncType);
+      }
+    }
+  });
+
+  list.addEventListener('change', (e) => {
+    if (e.target.matches('select')) syncType(e.target.closest('.question-card'));
+  });
+
+  // Initialize on load: number the pre-rendered card, wire its type toggle.
+  renumber();
+  list.querySelectorAll('.question-card').forEach(syncType);
+</script>
+{% endblock %}

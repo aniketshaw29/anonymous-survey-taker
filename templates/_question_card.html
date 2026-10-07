@@ -1,0 +1,55 @@
+{#
+  _question_card.html — one reusable question card.
+
+  Included twice by index.html (live list + <template> clone source)
+  and once by edit.html (pre-filled with existing questions).
+
+  When `q` is defined (edit mode) the fields carry current values;
+  otherwise (create mode) they render empty defaults.
+#}
+<div class="question-card card" data-index="0">
+
+  {# Remove button hidden on the first/only card via CSS :only-child. #}
+  <button type="button" class="remove-question" data-remove
+          aria-label="Remove question">&times;</button>
+
+  <label class="field">
+    <span>Question type</span>
+    {# name="q_type[0]" etc. is rewritten by renumber() in JS. #}
+    <select name="q_type[0]">
+      <option value="choice"   {% if q and q.type == 'choice' %}selected{% endif %}>
+        Multiple choice
+      </option>
+      <option value="text"     {% if q and q.type == 'text' %}selected{% endif %}>
+        Free text
+      </option>
+      <option value="rating"   {% if q and q.type == 'rating' %}selected{% endif %}>
+        Rating (1–5)
+      </option>
+    </select>
+  </label>
+
+  <label class="field">
+    <span>Question text <abbr title="required">*</abbr></span>
+    <textarea name="q_prompt[0]" rows="2" maxlength="500" required
+              placeholder="e.g. How satisfied are you with the deploy process?">{{ q.prompt if q else '' }}</textarea>
+  </label>
+
+  {# Only meaningful for multiple choice; toggled visible by syncType(). #}
+  <label class="field options-field" {% if q and q.type != 'choice' %}hidden{% endif %}>
+    <span>Options <em>(one per line, min 2)</em></span>
+    <textarea name="q_options_0" rows="4"
+              placeholder="Great&#10;Okay&#10;Needs work">{{ options_text if options_text else '' }}</textarea>
+  </label>
+
+  <label class="check">
+    {#
+      Required checkboxes share name="q_required". Only checked ones are
+      submitted; the JS rewrites each value to its card index so the
+      server can tell WHICH question was marked required.
+    #}
+    <input type="checkbox" name="q_required" value="0"
+           {% if q and q.required %}checked{% endif %}>
+    <span>Required</span>
+  </label>
+</div>

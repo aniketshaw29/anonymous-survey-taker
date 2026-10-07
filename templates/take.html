@@ -1,0 +1,73 @@
+{#
+  take.html — the public, anonymous fill-in page.
+
+  No login, no identifiers. The privacy blurb at the top is
+  intentionally prominent so respondents trust the "anonymous" claim.
+
+  Choice options are decoded with the `from_json` filter registered
+  in app.py (wraps json.loads with fallbacks).
+#}
+{% extends "base.html" %}
+
+{% block title %}{{ survey.title }} — Anonymous Survey{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <h1>{{ survey.title }}</h1>
+  {% if survey.description %}
+    <p class="lede">{{ survey.description }}</p>
+  {% endif %}
+  <p class="privacy-note">This survey is anonymous — no IPs, cookies, or
+     identifiers are collected.</p>
+</section>
+
+{#
+  Plain form POST keeps things simple and works without JS.
+  The server validates every field before writing anything.
+#}
+<form class="survey-form" method="post"
+      action="{{ url_for('take_survey', survey_id=survey.id) }}">
+
+  {% for q in questions %}
+  <fieldset class="card question">
+    <legend>
+      {{ q.prompt }}
+      {% if q.required %}<abbr title="required">*</abbr>{% endif %}
+    </legend>
+
+    {% if q.type == 'choice' %}
+      {# Radio buttons: shared name = one selectable option per question. #}
+      {% for opt in q.options | from_json %}
+      <label class="choice">
+        <input type="radio" name="q{{ q.id }}" value="{{ opt }}"
+               {% if q.required %}required{% endif %}>
+        <span>{{ opt }}</span>
+      </label>
+      {% endfor %}
+
+    {% elif q.type == 'rating' %}
+      {# Star rating: five radios styled as stars by the CSS. #}
+      <div class="rating" role="radiogroup" aria-label="{{ q.prompt }}">
+        {% for star in [1, 2, 3, 4, 5] %}
+        <label class="star">
+          <input type="radio" name="q{{ q.id }}" value="{{ star }}"
+                 {% if q.required %}required{% endif %}>
+          <span aria-hidden="true">★</span>
+          <span class="sr-only">{{ star }} star{{ 's' if star > 1 else '' }}</span>
+        </label>
+        {% endfor %}
+      </div>
+
+    {% else %}  {# free text #}
+      <label class="field">
+        <textarea name="q{{ q.id }}" rows="3" maxlength="5000"
+                  {% if q.required %}required{% endif %}
+                  placeholder="Your answer…"></textarea>
+      </label>
+    {% endif %}
+  </fieldset>
+  {% endfor %}
+
+  <button type="submit" class="btn btn-primary">Submit anonymously</button>
+</form>
+{% endblock %}

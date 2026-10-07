@@ -1,0 +1,55 @@
+{#
+  created.html — success page shown right after a survey is created.
+
+  Displays the two links every creator needs:
+    * public link  — share with respondents
+    * secret link  — view results / edit / close / delete
+#}
+{% extends "base.html" %}
+
+{% block title %}Survey created — Anonymous Survey Taker{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <h1>“{{ title }}” is live</h1>
+  <p class="lede">Copy these links now — the secret link is shown only once.</p>
+</section>
+
+<div class="card link-box">
+  <h2>Public link <span class="badge badge-share">share freely</span></h2>
+  {# url_for builds an absolute URL relative to the app root. #}
+  <code class="link">{{ url_for('take_survey', survey_id=survey_id, _external=True) }}</code>
+  <button class="btn btn-secondary btn-copy" data-copy
+          data-value="{{ url_for('take_survey', survey_id=survey_id, _external=True) }}">
+    Copy
+  </button>
+</div>
+
+<div class="card link-box link-box-secret">
+  <h2>Secret link <span class="badge badge-secret">keep private</span></h2>
+  <p class="hint">Grants access to results, editing, closing, and deletion.</p>
+  <code class="link">{{ url_for('results', survey_id=survey_id, key=secret, _external=True) }}</code>
+  <button class="btn btn-secondary btn-copy" data-copy
+          data-value="{{ url_for('results', survey_id=survey_id, key=secret, _external=True) }}">
+    Copy
+  </button>
+</div>
+
+<div class="actions">
+  <a class="btn btn-primary" href="{{ url_for('take_survey', survey_id=survey_id) }}">
+    Preview survey
+  </a>
+  <a class="btn btn-secondary" href="{{ url_for('index') }}">Create another</a>
+</div>
+
+<script>
+  // Tiny copy-to-clipboard helper for the [data-copy] buttons.
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(btn.dataset.value);
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  });
+</script>
+{% endblock %}
