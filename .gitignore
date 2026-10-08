@@ -1,0 +1,17 @@
+# Virtual environment — created per-developer, never committed.
+.venv/
+venv/
+env/
+
+# SQLite database — contains live survey data.
+survey.db
+
+# Python bytecode caches.
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Editor / OS noise.
+.DS_Store
+.idea/
+.vscode/

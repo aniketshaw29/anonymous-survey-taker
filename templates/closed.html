@@ -1,0 +1,17 @@
+{#
+  closed.html — shown when the creator has stopped accepting responses.
+
+  The survey page still resolves (so shared links don't 404), but the
+  form is not rendered and the server rejects POSTs with 403.
+#}
+{% extends "base.html" %}
+
+{% block title %}Closed — {{ survey.title }}{% endblock %}
+
+{% block body %}
+<section class="hero center">
+  <h1>{{ survey.title }}</h1>
+  <p class="lede">This survey is closed and no longer accepting responses.</p>
+  <a class="btn btn-secondary" href="{{ url_for('index') }}">Create your own</a>
+</section>
+{% endblock %}

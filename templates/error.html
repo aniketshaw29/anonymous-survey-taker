@@ -1,0 +1,17 @@
+{#
+  error.html — generic error page for 400 / 403 / 404.
+
+  Keeps error handling consistent: friendly text instead of a
+  Flask traceback, with a way back home.
+#}
+{% extends "base.html" %}
+
+{% block title %}{{ code }} — Anonymous Survey Taker{% endblock %}
+
+{% block body %}
+<section class="hero center">
+  <h1>{{ code }}</h1>
+  <p class="lede">{{ message }}</p>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Go home</a>
+</section>
+{% endblock %}

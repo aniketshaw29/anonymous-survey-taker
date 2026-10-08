@@ -15,8 +15,13 @@
 
   <label class="field">
     <span>Question type</span>
-    {# name="q_type[0]" etc. is rewritten by renumber() in JS. #}
-    <select name="q_type[0]">
+    {#
+      Type/prompt/required share one name across all cards — the server
+      reads them with getlist() and relies on document order. Choice
+      options must stay per-card (q_options_N) so each question keeps
+      its own list. `i` is set by the including template (loop.index0).
+    #}
+    <select name="q_type">
       <option value="choice"   {% if q and q.type == 'choice' %}selected{% endif %}>
         Multiple choice
       </option>
@@ -31,24 +36,24 @@
 
   <label class="field">
     <span>Question text <abbr title="required">*</abbr></span>
-    <textarea name="q_prompt[0]" rows="2" maxlength="500" required
+    <textarea name="q_prompt" rows="2" maxlength="500" required
               placeholder="e.g. How satisfied are you with the deploy process?">{{ q.prompt if q else '' }}</textarea>
   </label>
 
   {# Only meaningful for multiple choice; toggled visible by syncType(). #}
   <label class="field options-field" {% if q and q.type != 'choice' %}hidden{% endif %}>
     <span>Options <em>(one per line, min 2)</em></span>
-    <textarea name="q_options_0" rows="4"
+    <textarea name="q_options_{{ i | default(0) }}" rows="4"
               placeholder="Great&#10;Okay&#10;Needs work">{{ options_text if options_text else '' }}</textarea>
   </label>
 
   <label class="check">
     {#
       Required checkboxes share name="q_required". Only checked ones are
-      submitted; the JS rewrites each value to its card index so the
-      server can tell WHICH question was marked required.
+      submitted, and each carries its card's index as the value, so the
+      server knows WHICH question was marked required.
     #}
-    <input type="checkbox" name="q_required" value="0"
+    <input type="checkbox" name="q_required" value="{{ i | default(0) }}"
            {% if q and q.required %}checked{% endif %}>
     <span>Required</span>
   </label>

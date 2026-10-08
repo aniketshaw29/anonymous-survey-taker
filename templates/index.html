@@ -76,14 +76,15 @@
   const list = document.getElementById('questions');
   const tpl  = document.getElementById('question-template');
 
-  // Rewrite every card's form names so indexes match array positions.
+  // Rewrite every card's form names so the server can map fields back
+  // to cards: type/prompt/required share one name (read via getlist in
+  // document order); options stay indexed per card (q_options_N).
   function renumber() {
     list.querySelectorAll('.question-card').forEach((card, i) => {
-      card.querySelector('[name^="q_type"]').name     = `q_type[${i}]`;
-      card.querySelector('[name^="q_prompt"]').name   = `q_prompt[${i}]`;
-      const req = card.querySelector('[name^="q_required"]');
-      // Only checked boxes are submitted; store the index as its value.
-      req.value = i;
+      card.querySelector('[name^="q_type"]').name    = 'q_type';
+      card.querySelector('[name^="q_prompt"]').name  = 'q_prompt';
+      // Only checked boxes are submitted; their value is the card index.
+      card.querySelector('[name^="q_required"]').value = i;
       card.querySelector('[name^="q_options_"]').name  = `q_options_${i}`;
       card.dataset.index = i;
     });

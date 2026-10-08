@@ -1,0 +1,138 @@
+{#
+  results.html — creator-only dashboard (guarded by ?key=).
+
+  Renders per-question aggregates computed in app.py:
+    choice  -> horizontal bars with counts + percentages
+    rating  -> star average + 1..5 histogram
+    text    -> the raw anonymous free-text answers
+
+  `key` is threaded through every link so the creator doesn't
+  have to re-enter the secret on each action.
+#}
+{% extends "base.html" %}
+
+{% block title %}Results — {{ survey.title }}{% endblock %}
+
+{% block body %}
+<section class="hero">
+  <h1>{{ survey.title }}</h1>
+  {% if survey.description %}
+    <p class="lede">{{ survey.description }}</p>
+  {% endif %}
+  <p class="stats-line">
+    <strong>{{ total }}</strong> response{{ 's' if total != 1 else '' }}
+    {% if survey.closed %}<span class="badge badge-closed">closed</span>{% endif %}
+  </p>
+</section>
+
+{# ---------- Action bar: share, edit, close, delete ---------- #}
+<div class="actions card action-bar">
+  {# Public link respondents use — handy for re-sharing. #}
+  <button class="btn btn-secondary btn-copy" data-copy
+          data-value="{{ url_for('take_survey', survey_id=survey.id, _external=True) }}">
+    Copy public link
+  </button>
+
+  <a class="btn btn-secondary"
+     href="{{ url_for('edit_survey', survey_id=survey.id, key=key) }}">
+    Edit survey
+  </a>
+
+  {# Toggle open/closed — a POST so simple links can't trigger it. #}
+  <form method="post" action="{{ url_for('toggle_survey', survey_id=survey.id) }}">
+    <input type="hidden" name="key" value="{{ key }}">
+    <button class="btn btn-secondary" type="submit">
+      {{ 'Reopen' if survey.closed else 'Close survey' }}
+    </button>
+  </form>
+
+  {# Delete uses JS confirm() as a guard against accidental clicks. #}
+  <form method="post" action="{{ url_for('delete_survey', survey_id=survey.id) }}"
+        onsubmit="return confirm('Delete this survey and ALL responses? This cannot be undone.');">
+    <input type="hidden" name="key" value="{{ key }}">
+    <button class="btn btn-danger" type="submit">Delete</button>
+  </form>
+</div>
+
+{% if total == 0 %}
+  {# Empty state: nothing to chart yet. #}
+  <div class="card empty-state">
+    <p>No responses yet. Share the public link to start collecting.</p>
+  </div>
+{% else %}
+
+  {% for entry in stats %}
+  {% set q = entry.question %}
+  <section class="card result-question">
+    <h2>{{ q.prompt }}</h2>
+
+    {# ---------- Multiple choice: bar chart ---------- #}
+    {% if q.type == 'choice' %}
+      <ul class="bars">
+        {% for bar in entry.bars %}
+        <li class="bar-row">
+          <span class="bar-label">{{ bar.label }}</span>
+          <div class="bar-track">
+            {# Inline width is data-driven; the rest is styled by CSS. #}
+            <div class="bar-fill" style="width: {{ bar.pct }}%"></div>
+          </div>
+          <span class="bar-count">{{ bar.count }} ({{ bar.pct }}%)</span>
+        </li>
+        {% endfor %}
+      </ul>
+
+    {# ---------- Rating: average + histogram ---------- #}
+    {% elif q.type == 'rating' %}
+      <p class="rating-summary">
+        {% if entry.average is not none %}
+          Average <strong>{{ entry.average }}</strong> / 5
+          from {{ entry.answered }} rating{{ 's' if entry.answered != 1 else '' }}
+        {% else %}
+          No ratings yet.
+        {% endif %}
+      </p>
+      {% if entry.answered %}
+      <ul class="bars">
+        {# Highest row first — descending star counts. #}
+        {% for row in entry.hist_rows | reverse %}
+        <li class="bar-row">
+          <span class="bar-label">{{ row.star }} ★</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width: {{ row.pct }}%"></div>
+          </div>
+          <span class="bar-count">{{ row.count }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+    {# ---------- Free text: raw answers ---------- #}
+    {% else %}
+      {% if entry.texts %}
+      <ul class="text-answers">
+        {# These contain no PII by construction — they're shown verbatim. #}
+        {% for text in entry.texts %}
+        <li>“{{ text }}”</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="hint">No text answers yet.</p>
+      {% endif %}
+    {% endif %}
+  </section>
+  {% endfor %}
+
+{% endif %}
+
+<script>
+  // Same copy-to-clipboard helper as the created page.
+  document.querySelectorAll('[data-copy]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(btn.dataset.value);
+      const old = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = old, 1500);
+    });
+  });
+</script>
+{% endblock %}

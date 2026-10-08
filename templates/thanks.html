@@ -1,0 +1,21 @@
+{#
+  thanks.html — post-submission confirmation.
+
+  Deliberately minimal: no response id, no "edit your answer" link —
+  an anonymous response can't be tied back to the person who sent it.
+#}
+{% extends "base.html" %}
+
+{% block title %}Thanks — {{ survey.title }}{% endblock %}
+
+{% block body %}
+<section class="hero center">
+  <h1>Response recorded</h1>
+  <p class="lede">
+    Thank you — your answer to “{{ survey.title }}” was submitted
+    anonymously. There is no way to link it back to you.
+  </p>
+  {# Only link back to the survey itself; no tracking pixel, no redirect. #}
+  <a class="btn btn-secondary" href="{{ url_for('index') }}">Create your own survey</a>
+</section>
+{% endblock %}

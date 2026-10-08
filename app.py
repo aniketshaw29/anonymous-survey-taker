@@ -78,6 +78,22 @@ app.config["SECRET_KEY"] = secrets.token_hex(32)
 # ---------------------------------------------------------------------------
 
 
+class Row(sqlite3.Row):
+    """A sqlite3.Row that ALSO supports attribute access.
+
+    The ORM-free sqlite3 module only allows ``row["title"]``, but Jinja
+    templates read more naturally as ``survey.title``. This subclass
+    bridges the two styles: indexing (used in Python code) and dotted
+    access (used in templates) both work on the same row objects.
+    """
+
+    def __getattr__(self, name: str):
+        try:
+            return self[name]
+        except IndexError as exc:
+            raise AttributeError(name) from exc
+
+
 def get_db() -> sqlite3.Connection:
     """Return the per-request SQLite connection.
 
@@ -88,8 +104,8 @@ def get_db() -> sqlite3.Connection:
     if "db" not in g:
         g.db = sqlite3.connect(DATABASE)
         # ``row_factory = Row`` lets us access columns by name
-        # (e.g. ``row["title"]``) instead of by index.
-        g.db.row_factory = sqlite3.Row
+        # (e.g. ``row["title"]`` or ``row.title``).
+        g.db.row_factory = Row
         # Enforce FOREIGN KEY constraints (SQLite disables them by default).
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
@@ -179,6 +195,11 @@ def parse_options(raw: str) -> list[str]:
     except (ValueError, TypeError):
         return []
     return value if isinstance(value, list) else []
+
+
+# Expose parse_options to Jinja templates as the `| from_json` filter.
+# Used by take.html (render choice options) and edit.html (pre-fill them).
+app.jinja_env.filters["from_json"] = parse_options
 
 
 def count_responses(survey_id: str) -> int:
@@ -447,15 +468,22 @@ def results(survey_id: str) -> str:
 
         elif q["type"] == "rating":
             # Histogram of star values 1..5 + weighted average.
+            # Pre-compute bar percentages here because Jinja templates
+            # have no ``round()`` *function* (only a | round filter).
             histogram = {str(i): counts.get(str(i), 0) for i in range(1, 6)}
             answered = sum(histogram.values())
             weighted = sum(int(k) * v for k, v in histogram.items())
             entry["histogram"] = histogram
             entry["answered"] = answered
             entry["average"] = round(weighted / answered, 2) if answered else None
-            entry["max_pct"] = (
-                round(100 * max(histogram.values()) / answered) if answered else 0
-            )
+            entry["hist_rows"] = [
+                {
+                    "star": star,
+                    "count": n,
+                    "pct": round(100 * n / answered) if answered else 0,
+                }
+                for star, n in histogram.items()
+            ]
 
         else:  # text — show the answers themselves (they contain no PII)
             texts = sorted(

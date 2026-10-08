@@ -1,0 +1,424 @@
+/*
+ * style.css — single stylesheet for the whole app.
+ *
+ * Layout strategy:
+ *   - CSS custom properties (variables) at the top for the palette,
+ *     so a retheme is a one-block edit.
+ *   - Mobile-first, single-column; cards give each section a clear edge.
+ *   - Bar charts (results page) are pure CSS: a track div + an inner
+ *     fill div whose width is set inline from server-side percentages.
+ */
+
+/* ----------------------------------------------------------------
+ * Design tokens
+ * ---------------------------------------------------------------- */
+:root {
+  --bg:        #f6f7fb;   /* page background                        */
+  --surface:   #ffffff;   /* card background                        */
+  --ink:       #1c2333;   /* primary text                           */
+  --ink-soft:  #5b6478;   /* secondary text                         */
+  --line:      #e3e6ef;   /* borders / dividers                    */
+  --brand:     #4f46e5;   /* indigo accent — buttons, links, bars   */
+  --brand-dk:  #4338ca;   /* darker hover state                     */
+  --danger:    #dc2626;   /* destructive actions                    */
+  --ok:        #059669;   /* success notes                          */
+  --radius:    10px;      /* shared corner radius                   */
+  --shadow:    0 1px 3px rgba(16, 24, 40, .08);
+}
+
+/* ----------------------------------------------------------------
+ * Reset & base
+ * ---------------------------------------------------------------- */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+/* Screen-reader-only utility (used by the star ratings). */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----------------------------------------------------------------
+ * Header / footer / container
+ * ---------------------------------------------------------------- */
+.site-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 20px;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The word "survey" gets the brand color for a two-tone logo effect. */
+.brand span { color: var(--brand); }
+
+.container {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 16px 64px;
+}
+
+.site-footer {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 13px;
+  padding: 24px 16px;
+  border-top: 1px solid var(--line);
+}
+
+/* ----------------------------------------------------------------
+ * Hero (page intro blocks)
+ * ---------------------------------------------------------------- */
+.hero { margin-bottom: 24px; }
+.hero.center { text-align: center; margin-top: 60px; }
+.hero h1 { margin: 0 0 8px; font-size: 28px; }
+
+.lede {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 17px;
+}
+
+/* Green-tinted privacy reassurance shown on the public survey page. */
+.privacy-note {
+  margin: 14px 0 0;
+  padding: 8px 12px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+  color: #065f46;
+  font-size: 14px;
+}
+
+/* ----------------------------------------------------------------
+ * Cards & form fields
+ * ---------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+fieldset.card { border: 1px solid var(--line); }
+
+legend {
+  font-weight: 700;
+  padding: 0 6px;
+  font-size: 15px;
+}
+
+.field {
+  display: block;
+  margin-bottom: 14px;
+}
+
+.field > span {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* All text inputs/textareas share one look. */
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+  color: var(--ink);
+  background: #fff;
+}
+
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+  border-color: var(--brand);
+}
+
+/* Inline "required" asterisk. */
+abbr[title] {
+  color: var(--danger);
+  text-decoration: none;
+}
+
+/* Checkbox row ("Required") */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ----------------------------------------------------------------
+ * Buttons
+ * ---------------------------------------------------------------- */
+.btn {
+  display: inline-block;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease;
+}
+
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dk); }
+
+.btn-secondary {
+  background: #fff;
+  color: var(--ink);
+  border-color: var(--line);
+}
+.btn-secondary:hover { border-color: var(--brand); color: var(--brand); }
+
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+
+/* Buttons inside inline <form>s should match their form's spacing. */
+.actions form { display: inline-block; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+/* ----------------------------------------------------------------
+ * Flash messages
+ * ---------------------------------------------------------------- */
+.flashes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+}
+
+.flash {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+/* ----------------------------------------------------------------
+ * Builder: question cards
+ * ---------------------------------------------------------------- */
+.question-card {
+  position: relative;      /* anchors the remove button */
+  padding-top: 14px;
+}
+
+/* Hide the remove control when it's the only question left. */
+.question-card:only-child .remove-question { display: none; }
+
+.remove-question {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink-soft);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.remove-question:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+/* ----------------------------------------------------------------
+ * Created page: link boxes
+ * ---------------------------------------------------------------- */
+.link-box .link {
+  display: block;
+  word-break: break-all;
+  background: var(--bg);
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+
+.link-box-secret { border-color: var(--brand); }
+
+.badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.badge-share   { background: #ecfdf5; color: var(--ok); }
+.badge-secret  { background: #eef2ff; color: var(--brand); }
+.badge-closed  { background: #fef2f2; color: var(--danger); }
+
+.hint { color: var(--ink-soft); font-size: 14px; margin: 4px 0; }
+
+/* ----------------------------------------------------------------
+ * Public survey page: choices & star ratings
+ * ---------------------------------------------------------------- */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.choice:hover { border-color: var(--brand); background: #fafaff; }
+
+/* Highlight the selected choice with brand tint. */
+.choice:has(input:checked) {
+  border-color: var(--brand);
+  background: #eef2ff;
+}
+
+.rating {
+  display: flex;
+  gap: 6px;
+  direction: rtl;          /* lets the radio group select from the right */
+  justify-content: flex-end;
+}
+
+.star {
+  font-size: 30px;
+  color: var(--line);
+  cursor: pointer;
+  direction: ltr;          /* keep the glyph itself left-to-right */
+}
+
+.star input { position: absolute; opacity: 0; }
+
+/* Fill stars at and below the hovered/selected position. */
+.star:has(input:checked),
+.star:hover,
+.star:hover ~ .star { color: #f59e0b; }
+
+/* ----------------------------------------------------------------
+ * Results page: bar charts
+ * ---------------------------------------------------------------- */
+.stats-line { color: var(--ink-soft); }
+
+.action-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.empty-state {
+  text-align: center;
+  color: var(--ink-soft);
+}
+
+.result-question h2 {
+  margin: 0 0 14px;
+  font-size: 17px;
+}
+
+.bars { list-style: none; margin: 0; padding: 0; }
+
+.bar-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 90px;  /* label | track | count */
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.bar-label { color: var(--ink); }
+
+.bar-track {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  height: 18px;
+  overflow: hidden;
+}
+
+/* Width comes from the inline style set in results.html. */
+.bar-fill {
+  height: 100%;
+  background: var(--brand);
+  border-radius: 999px;
+  transition: width .4s ease;
+}
+
+.bar-count {
+  color: var(--ink-soft);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rating-summary { margin: 0 0 12px; font-size: 15px; }
+
+.text-answers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.text-answers li {
+  padding: 10px 12px;
+  border-left: 3px solid var(--brand);
+  background: var(--bg);
+  border-radius: 0 8px 8px 0;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+
+/* ----------------------------------------------------------------
+ * Responsive: stack the bar-chart grid on narrow screens
+ * ---------------------------------------------------------------- */
+@media (max-width: 560px) {
+  .bar-row {
+    grid-template-columns: 1fr;          /* label, track, count stack */
+    gap: 4px;
+  }
+  .bar-count { text-align: left; }
+}
